@@ -62,10 +62,10 @@ typedef union {
  * 4-5: CRC (2 bytes)
  */
 typedef struct {
-    uint8_t address;            // Address of Slave Device
-    MODBUS_function_t function_code;      // Function code of Modbus
-    MODBUS_data_t data;
-    uint16_t crc;               // Can be calculated automatically
+    uint8_t address;            			// Address of Slave Device
+    MODBUS_function_t function_code;      	// Function code of Modbus
+    MODBUS_data_t data;						// Modbus Data
+    uint16_t crc;               			// Can be calculated automatically
 }MODBUS_t;
 
 
