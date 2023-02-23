@@ -31,7 +31,7 @@ static utils_buffer_t modbus_rx_buffer;
 static MODBUS_t modbus_pdu_tx;
 static MODBUS_t modbus_pdu_rx;
 static bool modbus_pdu_is_active = false;
-static bool modbus_pdu_start_time = 0;
+static uint32_t modbus_pdu_start_time = 0;
 static uint8_t modbus_pdu_rx_state = RX_GET_ADDRESS;
 
 
@@ -52,21 +52,24 @@ bool MODBUS_run(){
 				break;
 			case MODBUS_WRITE_SINGLE_COIL:
 			case MODBUS_WRITE_SINGLE_REGISTER:
-				MODBUS_process_tx_write_single_operation();
+				MODBUS_process_rx_write_single_operation();
+				break;
 			case MODBUS_WRITE_MULTIPLE_COILS:
 			case MODBUS_WRITE_MULTIPLE_REGISTER:
-				MODBUS_process_tx_write_multiple_operation();
+				MODBUS_process_rx_write_multiple_operation();
+				break;
 			default:
 				break;
 		}
+		if(MODBUS_GET_TIME_MS() - modbus_pdu_start_time > MODBUS_TIMEOUT){
+			utils_log_error("MODBUS receive timeout\r\n");
+			// Disable Modbus PDU active
+			modbus_pdu_is_active = false;
+			// Reset Rx State
+			modbus_pdu_rx_state = RX_GET_ADDRESS;
+		}
 	}
-	if(MODBUS_GET_TIME_MS() - modbus_pdu_start_time > MODBUS_TIMEOUT){
-		utils_log_error("MODBUS receive timeout\r\n");
-		// Disable Modbus PDU active
-		modbus_pdu_is_active = false;
-		// Reset Rx State
-		modbus_pdu_rx_state = RX_GET_ADDRESS;
-	}
+
 }
 
 bool MODBUS_transmit(MODBUS_t* tx_message){
@@ -88,10 +91,12 @@ bool MODBUS_transmit(MODBUS_t* tx_message){
 			break;
 		case MODBUS_WRITE_SINGLE_COIL:
 		case MODBUS_WRITE_SINGLE_REGISTER:
-			MODBUS_process_rx_write_single_operation();
+			MODBUS_process_tx_write_single_operation();
+			break;
 		case MODBUS_WRITE_MULTIPLE_COILS:
 		case MODBUS_WRITE_MULTIPLE_REGISTER:
-			MODBUS_process_rx_write_multiple_operation();
+			MODBUS_process_tx_write_multiple_operation();
+			break;
 		default:
 			break;
 	}
@@ -114,15 +119,15 @@ static void MODBUS_process_tx_read_operation(){
 	modbus_tx_buffer[idx++] = modbus_pdu_tx.function_code;
 	// Modbus Starting Address: 2 byte
 	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.read_req.addr >> 8;
-	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.read_req.addr && 0xFF;
+	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.read_req.addr & 0x00FF;
 	// Modbus Quantity: 2 byte
 	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.read_req.quantity >> 8;
-	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.read_req.quantity && 0xFF;
+	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.read_req.quantity & 0x00FF;
 	// Caculate CRC
 	modbus_pdu_tx.crc = MODBUS_calculate_crc(modbus_tx_buffer, idx);
 	// Modbus Crc: 2 byte
+	modbus_tx_buffer[idx++] = modbus_pdu_tx.crc & 0x00FF;
 	modbus_tx_buffer[idx++] = modbus_pdu_tx.crc >> 8;
-	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.read_req.quantity && 0xFF;
 	// Send Modbus Tx Buffer
 	MODBUS_TRANSMIT(modbus_tx_buffer, idx);
 }
@@ -135,15 +140,15 @@ static void MODBUS_process_tx_write_single_operation(){
 	modbus_tx_buffer[idx++] = modbus_pdu_tx.function_code;
 	// Modbus Starting Address: 2 byte
 	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.write_single_req.addr >> 8;
-	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.write_single_req.addr && 0xFF;
+	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.write_single_req.addr & 0x00FF;
 	// Modbus Data: 2 byte
 	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.write_single_req.data >> 8;
-	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.write_single_req.data && 0xFF;
+	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.write_single_req.data & 0x00FF;
 	// Caculate CRC
 	modbus_pdu_tx.crc = MODBUS_calculate_crc(modbus_tx_buffer, idx);
 	// Modbus Crc: 2 byte
+	modbus_tx_buffer[idx++] = modbus_pdu_tx.crc & 0x00FF;
 	modbus_tx_buffer[idx++] = modbus_pdu_tx.crc >> 8;
-	modbus_tx_buffer[idx++] = modbus_pdu_tx.crc && 0xFF;
 	// Send Modbus Tx Buffer
 	MODBUS_TRANSMIT(modbus_tx_buffer, idx);
 }
@@ -156,13 +161,13 @@ static void MODBUS_process_tx_write_multiple_operation(){
 	modbus_tx_buffer[idx++] = modbus_pdu_tx.function_code;
 	// Modbus Starting Address: 2 byte
 	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.write_multiple_req.addr >> 8;
-	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.write_multiple_req.addr && 0xFF;
+	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.write_multiple_req.addr & 0x00FF;
 	// Modbus Quantity: 2 byte
 	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.write_multiple_req.quantity >> 8;
-	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.write_multiple_req.quantity && 0xFF;
+	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.write_multiple_req.quantity & 0x00FF;
 	// Modbus Byte Count: 2 byte
 	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.write_multiple_req.byte_cnt >> 8;
-	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.write_multiple_req.byte_cnt && 0xFF;
+	modbus_tx_buffer[idx++] = modbus_pdu_tx.data.write_multiple_req.byte_cnt & 0x00FF;
 	// Append Data to Buffer
 	// Modbus Data: N=byte_cnt bytes
 	for (int var = 0; var < modbus_pdu_tx.data.write_multiple_req.byte_cnt; ++var) {
@@ -170,16 +175,19 @@ static void MODBUS_process_tx_write_multiple_operation(){
 	}
 	// Caculate CRC
 	modbus_pdu_tx.crc = MODBUS_calculate_crc(modbus_tx_buffer, idx);
-	// Modbus Crc: 2 byte
+	// Modbus Crc: 2 byte , Low bytes first , High Byte After
+	modbus_tx_buffer[idx++] = modbus_pdu_tx.crc & 0x00FF;
 	modbus_tx_buffer[idx++] = modbus_pdu_tx.crc >> 8;
-	modbus_tx_buffer[idx++] = modbus_pdu_tx.crc && 0xFF;
 	// Send Modbus Tx Buffer
 	MODBUS_TRANSMIT(modbus_tx_buffer, idx);
 }
 
 static void MODBUS_process_rx_read_operation(){
 	static uint8_t byte_cnt_idx = 0;
+	static uint8_t crc_cnt_idx = 0;
 	static uint8_t data;
+	static uint8_t* crc_p;
+	static uint16_t ret_crc;
 	if(MODBUS_RECEIVE_IS_AVAILABLE()){
 		data = MODBUS_RECEIVE();
 		switch (modbus_pdu_rx_state) {
@@ -209,6 +217,16 @@ static void MODBUS_process_rx_read_operation(){
 				if(byte_cnt_idx == modbus_pdu_rx.data.read_res.byte_cnt){
 					// Reset byte_cnt_idx
 					byte_cnt_idx = 0;
+					// Switch to get crc data
+					modbus_pdu_rx_state = RX_GET_CRC;
+				}
+				break;
+			case RX_GET_CRC:
+				crc_p = (uint8_t*)&modbus_pdu_rx.crc;
+				crc_p[crc_cnt_idx++] = data;
+				if(crc_cnt_idx == 2){
+					// Reset crc_idx
+					crc_cnt_idx = 0;
 					// Push Pdu Rx to Rx Buffer
 					utils_buffer_push(&modbus_rx_buffer, &modbus_pdu_rx);
 					// Reset RX State
@@ -225,6 +243,9 @@ static void MODBUS_process_rx_read_operation(){
 static void MODBUS_process_rx_write_single_operation(){
 	static uint8_t addr_idx = 0;
 	static uint8_t data_idx = 0;
+	static uint8_t crc_cnt_idx = 0;
+	static uint16_t ret_crc;
+	static uint8_t* crc_p;
 	static uint8_t data;
 	static uint8_t * addr_p;
 	static uint8_t * data_p;
@@ -260,6 +281,16 @@ static void MODBUS_process_rx_write_single_operation(){
 				if(data_idx == 2){
 					// Reset byte_cnt_idx
 					data_idx = 0;
+					// Switch to get CRC data
+					modbus_pdu_rx_state = RX_GET_CRC;
+				}
+				break;
+			case RX_GET_CRC:
+				crc_p = (uint8_t*)&modbus_pdu_rx.crc;
+				crc_p[crc_cnt_idx++] = data;
+				if(crc_cnt_idx == 2){
+					// Reset crc_idx
+					crc_cnt_idx = 0;
 					// Push Pdu Rx to Rx Buffer
 					utils_buffer_push(&modbus_rx_buffer, &modbus_pdu_rx);
 					// Reset RX State
@@ -279,6 +310,9 @@ static void MODBUS_process_rx_write_multiple_operation(){
 	static uint8_t data;
 	static uint8_t * addr_p;
 	static uint8_t * quantity_p;
+	static uint8_t crc_cnt_idx = 0;
+	static uint16_t ret_crc;
+	static uint8_t* crc_p;
 	if(MODBUS_RECEIVE_IS_AVAILABLE()){
 		data = MODBUS_RECEIVE();
 		switch (modbus_pdu_rx_state) {
@@ -311,6 +345,16 @@ static void MODBUS_process_rx_write_multiple_operation(){
 				if(quantity_idx == 2){
 					// Reset byte_cnt_idx
 					quantity_idx = 0;
+					// Switch to get CRC
+					modbus_pdu_rx_state = RX_GET_CRC;
+				}
+				break;
+			case RX_GET_CRC:
+				crc_p = (uint8_t*)&modbus_pdu_rx.crc;
+				crc_p[crc_cnt_idx++] = data;
+				if(crc_cnt_idx == 2){
+					// Reset crc_idx
+					crc_cnt_idx = 0;
 					// Push Pdu Rx to Rx Buffer
 					utils_buffer_push(&modbus_rx_buffer, &modbus_pdu_rx);
 					// Reset RX State
@@ -366,6 +410,7 @@ static uint16_t MODBUS_calculate_crc(const uint8_t* data ,const uint16_t data_le
 
 	uint8_t temp;
 	uint16_t crc = 0xFFFF;
+	uint16_t data_idx = 0;
 	while (data_length--)
 	{
 		temp = *data_p++ ^ crc;

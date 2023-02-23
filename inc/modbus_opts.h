@@ -8,7 +8,7 @@
 #define MODBUS_DATA_MAX_SIZE        256     // Max data size for modbus
 #define MODBUS_TX_BUFFER_SIZE		256
 #define MODBUS_RX_BUFFER_SIZE       256       // Max Rx Buffer Size
-#define MODBUS_TIMEOUT              200     // Timeout for get response data
+#define MODBUS_TIMEOUT              3000     // Timeout for get response data
 
 /*Portable Modbus to your system*/ 
 
