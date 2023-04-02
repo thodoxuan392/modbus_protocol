@@ -13,12 +13,13 @@
 /*Portable Modbus to your system*/ 
 
 // Physical Layer [UART]
-#define MODBUS_TRANSMIT(data, data_size)		Sim3g_Transmit(data, data_size)
-#define MODBUS_RECEIVE_IS_AVAILABLE()			Uart1_Received_Buffer_Available()
-#define MODBUS_RECEIVE()						Uart1_Read_Received_Buffer()
+#define MODBUS_TRANSMIT(data, data_size)		UART5_transmit(data, data_size)
+#define MODBUS_RECEIVE_IS_AVAILABLE()			UART5_Read_Available()
+#define MODBUS_RECEIVE()						UART5_Read_Received_Buffer()
 
 // Tick                                     
 #define MODBUS_GET_TIME_MS()			HAL_GetTick()
+
 #endif //MODBUS_OPTS_H
 
 
