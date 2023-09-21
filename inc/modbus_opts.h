@@ -1,8 +1,9 @@
 #ifndef MODBUS_OPTS_H
 #define MODBUS_OPTS_H
 
-#include "main.h"
-#include "app_uart.h"
+#include "uart.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 
 #define MODBUS_DATA_MAX_SIZE        256     // Max data size for modbus
@@ -13,12 +14,12 @@
 /*Portable Modbus to your system*/ 
 
 // Physical Layer [UART]
-#define MODBUS_TRANSMIT(data, data_size)		UART5_transmit(data, data_size)
-#define MODBUS_RECEIVE_IS_AVAILABLE()			UART5_Read_Available()
-#define MODBUS_RECEIVE()						UART5_Read_Received_Buffer()
+#define MODBUS_TRANSMIT(data, data_size)		UART_send(data, data_size)
+#define MODBUS_RECEIVE_IS_AVAILABLE()			UART_rx_available()
+#define MODBUS_RECEIVE()						UART_receive_data()
 
 // Tick                                     
-#define MODBUS_GET_TIME_MS()			HAL_GetTick()
+#define MODBUS_GET_TIME_MS()			xTaskGetTickCount() / configTICK_RATE_HZ
 
 #endif //MODBUS_OPTS_H
 

@@ -1,7 +1,6 @@
 #include "string.h"
 #include "modbus.h"
 #include "utils_buffer.h"
-#include "utils_logger.h"
 
 // Internal Rx State
 enum {
