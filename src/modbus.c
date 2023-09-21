@@ -1,6 +1,7 @@
+#include "string.h"
 #include "modbus.h"
-#include "utils/utils_buffer.h"
-#include "utils/utils_logger.h"
+#include "utils_buffer.h"
+#include "utils_logger.h"
 
 // Internal Rx State
 enum {
@@ -31,6 +32,7 @@ static utils_buffer_t modbus_rx_buffer;
 static MODBUS_t modbus_pdu_tx;
 static MODBUS_t modbus_pdu_rx;
 static bool modbus_pdu_is_active = false;
+static size_t timeout = 0;
 static uint32_t modbus_pdu_start_time = 0;
 static uint8_t modbus_pdu_rx_state = RX_GET_ADDRESS;
 
@@ -39,6 +41,7 @@ static uint8_t modbus_pdu_rx_state = RX_GET_ADDRESS;
 
 bool MODBUS_init(){
     utils_buffer_init(&modbus_rx_buffer, sizeof(MODBUS_t));
+	return true;
 }
 
 bool MODBUS_run(){
@@ -61,18 +64,17 @@ bool MODBUS_run(){
 			default:
 				break;
 		}
-		if(MODBUS_GET_TIME_MS() - modbus_pdu_start_time > MODBUS_TIMEOUT){
-			utils_log_error("MODBUS receive timeout\r\n");
+		if(MODBUS_GET_TIME_MS() - modbus_pdu_start_time > timeout){
 			// Disable Modbus PDU active
 			modbus_pdu_is_active = false;
 			// Reset Rx State
 			modbus_pdu_rx_state = RX_GET_ADDRESS;
 		}
 	}
-
+	return true;
 }
 
-bool MODBUS_transmit(MODBUS_t* tx_message){
+bool MODBUS_transmit(MODBUS_t* tx_message, size_t res_timeout){
 	if(modbus_pdu_is_active){
 		return false;
 	}
@@ -80,6 +82,8 @@ bool MODBUS_transmit(MODBUS_t* tx_message){
 	modbus_pdu_is_active = true;
 	// Copy tx_message to Modbus Pdu
 	memcpy(&modbus_pdu_tx , tx_message, sizeof(MODBUS_t));
+	// Set timeout
+	timeout = res_timeout;
     // Transmit Modbus Request
     modbus_pdu_start_time = MODBUS_GET_TIME_MS();
     switch (modbus_pdu_tx.function_code) {
@@ -100,6 +104,7 @@ bool MODBUS_transmit(MODBUS_t* tx_message){
 		default:
 			break;
 	}
+	return true;
 }
 
 bool MODBUS_receive(MODBUS_t* rx_message){

@@ -73,7 +73,7 @@ typedef struct {
 
 bool MODBUS_init();
 bool MODBUS_run();
-bool MODBUS_transmit(MODBUS_t* tx_message);
+bool MODBUS_transmit(MODBUS_t* tx_message, size_t res_timeout);
 bool MODBUS_receive(MODBUS_t* rx_message);
 
 
