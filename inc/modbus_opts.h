@@ -14,12 +14,12 @@
 /*Portable Modbus to your system*/ 
 
 // Physical Layer [UART]
-#define MODBUS_TRANSMIT(data, data_size)		UART_send(data, data_size)
-#define MODBUS_RECEIVE_IS_AVAILABLE()			UART_rx_available()
+#define MODBUS_TRANSMIT(data, data_size)		UART_send_data(data, data_size)
+#define MODBUS_RECEIVE_IS_AVAILABLE()			UART_receive_available()
 #define MODBUS_RECEIVE()						UART_receive_data()
 
 // Tick                                     
-#define MODBUS_GET_TIME_MS()			xTaskGetTickCount() / configTICK_RATE_HZ
+#define MODBUS_GET_TIME_MS()			xTaskGetTickCount() * 1000 / configTICK_RATE_HZ
 
 #endif //MODBUS_OPTS_H
 
