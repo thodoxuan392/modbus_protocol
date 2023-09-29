@@ -32,6 +32,7 @@ static MODBUS_t modbus_pdu_tx;
 static MODBUS_t modbus_pdu_rx;
 static bool modbus_pdu_is_active = false;
 static size_t timeout = 0;
+static bool is_timeout = false;
 static uint32_t modbus_pdu_start_time = 0;
 static uint8_t modbus_pdu_rx_state = RX_GET_ADDRESS;
 
@@ -64,6 +65,7 @@ bool MODBUS_run(){
 				break;
 		}
 		if(MODBUS_GET_TIME_MS() - modbus_pdu_start_time > timeout){
+			is_timeout = true;
 			// Disable Modbus PDU active
 			modbus_pdu_is_active = false;
 			// Reset Rx State
@@ -73,10 +75,15 @@ bool MODBUS_run(){
 	return true;
 }
 
+bool MODBUS_is_timeout(){
+	return is_timeout;
+}
+
 bool MODBUS_transmit(MODBUS_t* tx_message, size_t res_timeout){
 	if(modbus_pdu_is_active){
 		return false;
 	}
+	is_timeout = false;
 	// Enable Process PDU
 	modbus_pdu_is_active = true;
 	// Copy tx_message to Modbus Pdu
