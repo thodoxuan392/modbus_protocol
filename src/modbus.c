@@ -90,6 +90,8 @@ bool MODBUS_transmit(MODBUS_t* tx_message, size_t res_timeout){
 	memcpy(&modbus_pdu_tx , tx_message, sizeof(MODBUS_t));
 	// Set timeout
 	timeout = res_timeout;
+	// Clear buffer
+	MODBUS_CLEAR();
     // Transmit Modbus Request
     modbus_pdu_start_time = MODBUS_GET_TIME_MS();
     switch (modbus_pdu_tx.function_code) {

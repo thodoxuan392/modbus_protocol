@@ -17,6 +17,7 @@
 #define MODBUS_TRANSMIT(data, data_size)		UART_send_data(data, data_size)
 #define MODBUS_RECEIVE_IS_AVAILABLE()			UART_receive_available()
 #define MODBUS_RECEIVE()						UART_receive_data()
+#define MODBUS_CLEAR()                          UART_clear_buffer() 
 
 // Tick                                     
 #define MODBUS_GET_TIME_MS()			xTaskGetTickCount() * 1000 / configTICK_RATE_HZ
