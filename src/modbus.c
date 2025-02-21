@@ -1,6 +1,6 @@
 #include "modbus.h"
-#include "utils/utils_buffer.h"
-#include "utils/utils_logger.h"
+#include "utils_buffer.h"
+#include "utils_logger.h"
 
 // Internal Rx State
 enum {

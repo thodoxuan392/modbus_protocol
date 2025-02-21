@@ -1,8 +1,7 @@
 #ifndef MODBUS_OPTS_H
 #define MODBUS_OPTS_H
 
-#include "main.h"
-#include "app_uart.h"
+#include "hal/uart.h"
 
 
 #define MODBUS_DATA_MAX_SIZE        256     // Max data size for modbus
